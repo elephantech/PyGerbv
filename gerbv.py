@@ -109,6 +109,11 @@ class Project(object):
         self._libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename)
 
     def _generate_render_info(self, dpi=72):
+        # Make all layers visible once to get a consistent bounding box regardless the visibilities of layers
+        visibilities = [layer.is_visible for layer in self.file]
+        for layer in self.file:
+            layer.is_visible = True
+
         libgerbv = self._libgerbv
         # exportimage.c
         # gerbv_export_autoscale_project
@@ -120,5 +125,9 @@ class Project(object):
 
         width  = bb.right  - bb.left + margin_in_inch * 2;
         height = bb.bottom - bb.top + margin_in_inch * 2;
+
+        # Change visibilities back
+        for i, layer in enumerate(self.file):
+            layer.is_visible = visibilities[i]
 
         return GerbvRenderInfo(dpi, dpi, bb.left-margin_in_inch, bb.top-margin_in_inch, 3, int(width*dpi), int(height*dpi))
