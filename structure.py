@@ -1,6 +1,6 @@
 from ctypes import *
 
-from enumeration import *
+from .enumeration import *
 
 # GDK Typedefs
 c_gboolean = c_int

@@ -4,8 +4,8 @@ import argparse
 from ctypes import *
 from ctypes.util import find_library
 
-from structure import *
-from utils import show_info
+from .structure import *
+from .utils import show_info
 
 class FileInfo(object):
     def __init__(self, file_info):
@@ -95,18 +95,18 @@ class Project(object):
         self._background = color
 
     def open_layer_from_filename(self, filename):
-        self._libgerbv.gerbv_open_layer_from_filename(self._project, filename)
+        self._libgerbv.gerbv_open_layer_from_filename(self._project, filename.encode('utf-8'))
         file_info = FileInfo(self._project.file[self._project.last_loaded].contents)
         self.file.append(file_info)
         return file_info
 
     def export_pdf_file_autosized(self, filename):
         render_info = self._generate_render_info()
-        self._libgerbv.gerbv_export_pdf_file_from_project(self._project, render_info, filename)
+        self._libgerbv.gerbv_export_pdf_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def export_png_file_autosized(self, filename):
         render_info = self._generate_render_info()
-        self._libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename)
+        self._libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def _generate_render_info(self, dpi=72):
         # Make all layers visible once to get a consistent bounding box regardless the visibilities of layers

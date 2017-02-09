@@ -1,1 +1,1 @@
-from gerbv import Project, FileInfo
+from .gerbv import Project, FileInfo
