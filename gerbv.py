@@ -70,6 +70,22 @@ class FileInfo(object):
         self._file_info.transform.inverted = inverted
         self._inverted = inverted
 
+    @property
+    def min_x(self):
+        return self._file_info.image.contents.info.contents.min_x
+
+    @property
+    def min_y(self):
+        return self._file_info.image.contents.info.contents.min_y
+
+    @property
+    def max_x(self):
+        return self._file_info.image.contents.info.contents.max_x
+
+    @property
+    def max_y(self):
+        return self._file_info.image.contents.info.contents.max_y
+
 
 class Project(object):
     _libgerbv = CDLL(find_library('gerbv'))
