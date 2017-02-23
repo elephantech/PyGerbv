@@ -7,7 +7,7 @@ from ctypes.util import find_library
 from .structure import *
 from .utils import show_info
 
-class FileInfo(object):
+class FileInfo:
     def __init__(self, file_info):
         self._file_info = file_info
         self._color = None
@@ -87,7 +87,7 @@ class FileInfo(object):
         return self._file_info.image.contents.info.contents.max_y
 
 
-class Project(object):
+class Project:
     _libgerbv = CDLL(find_library('gerbv'))
     _libgerbv.gerbv_create_project.restype = POINTER(GerbvProject)
     _libgerbv.gerbv_open_layer_from_filename.argtypes = [POINTER(GerbvProject), c_char_p]
@@ -123,6 +123,18 @@ class Project(object):
     def export_png_file_autosized(self, filename):
         render_info = self._generate_render_info()
         self._libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
+
+    def translate(self, x, y):
+        for layer in self.file:
+            layer.translate(x, y)
+
+    def scale(self, x, y):
+        for layer in self.file:
+            layer.scale(x, y)
+
+    def rotate(self, theta):
+        for layer in self.file:
+            layer.rotate(theta)
 
     def _generate_render_info(self, dpi=72):
         # Make all layers visible once to get a consistent bounding box regardless the visibilities of layers
