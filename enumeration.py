@@ -1,4 +1,6 @@
+import enum
 from ctypes import *
+
 
 c_gerbv_aperture_state_t = c_int
 c_gerbv_aperture_type_t = c_int
@@ -18,3 +20,20 @@ c_gerbv_polarity_t = c_int
 c_gerbv_render_types_t = c_int
 c_gerbv_selection_t = c_int
 c_gerbv_unit_t = c_int
+
+
+class ApertureType(enum.IntEnum):
+    NONE = 0
+    CIRCLE = 1
+    RECTANGLE = 2
+    OVAL = 3
+    POLYGON = 4
+    MACRO = 5
+    MACRO_CIRCLE = 6
+    MACRO_OUTLINE = 7
+    MACRO_POLYGON = 8
+    MACRO_MOIRE = 9
+    MACRO_THERMAL = 10
+    MACRO_LINE20 = 11
+    MACRO_LINE21 = 12
+    MACRO_LINE22 = 13

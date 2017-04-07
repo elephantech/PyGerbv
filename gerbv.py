@@ -4,12 +4,33 @@ import argparse
 from ctypes import *
 from ctypes.util import find_library
 
+from .enumeration import *
 from .structure import *
 from .utils import show_info
+
+
+_libgerbv = CDLL(find_library('gerbv'))
+
+
+class Image:
+    _libgerbv.gerbv_image_create_line_object.argtypes = [POINTER(GerbvImage), c_double, c_double, c_double, c_double, c_double, c_gerbv_aperture_type_t]
+    _libgerbv.gerbv_export_rs274x_file_from_image.restype = c_bool
+    _libgerbv.gerbv_export_rs274x_file_from_image.argtypes = [c_char_p, POINTER(GerbvImage), POINTER(GerbvUserTransformation)]
+
+    def __init__(self, image):
+        self._image = image
+
+    def create_line_object(self, start_x, start_y, end_x, end_y, line_width, aperture_type):
+        _libgerbv.gerbv_image_create_line_object(self._image, start_x, start_y, end_x, end_y, line_width, aperture_type)
+
+    def export_rs274x_file(self, filename, transformation):
+        return _libgerbv.gerbv_export_rs274x_file_from_image(filename.encode('utf-8'), self._image, transformation)
+
 
 class FileInfo:
     def __init__(self, file_info):
         self._file_info = file_info
+        self.image = Image(self._file_info.image)
         self._color = None
         self.color = (0, 0, 0, 0)
         self._alpha = None
@@ -88,7 +109,6 @@ class FileInfo:
 
 
 class Project:
-    _libgerbv = CDLL(find_library('gerbv'))
     _libgerbv.gerbv_create_project.restype = POINTER(GerbvProject)
     _libgerbv.gerbv_open_layer_from_filename.argtypes = [POINTER(GerbvProject), c_char_p]
     _libgerbv.gerbv_export_pdf_file_from_project.argtypes = [POINTER(GerbvProject), POINTER(GerbvRenderInfo), c_char_p]
@@ -96,7 +116,7 @@ class Project:
     _libgerbv.gerbv_render_get_boundingbox.argtypes = [POINTER(GerbvProject), POINTER(GerbvRenderSize)]
 
     def __init__(self):
-        self._project = self._libgerbv.gerbv_create_project()[0]
+        self._project = _libgerbv.gerbv_create_project()[0]
         self._background = None
         self.background = (0, 1, 1, 1)
         self.file = []
@@ -111,18 +131,18 @@ class Project:
         self._background = color
 
     def open_layer_from_filename(self, filename):
-        self._libgerbv.gerbv_open_layer_from_filename(self._project, filename.encode('utf-8'))
+        _libgerbv.gerbv_open_layer_from_filename(self._project, filename.encode('utf-8'))
         file_info = FileInfo(self._project.file[self._project.last_loaded].contents)
         self.file.append(file_info)
         return file_info
 
     def export_pdf_file_autosized(self, filename):
         render_info = self._generate_render_info()
-        self._libgerbv.gerbv_export_pdf_file_from_project(self._project, render_info, filename.encode('utf-8'))
+        _libgerbv.gerbv_export_pdf_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def export_png_file_autosized(self, filename):
         render_info = self._generate_render_info()
-        self._libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
+        _libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def translate(self, x, y):
         for layer in self.file:
@@ -142,20 +162,19 @@ class Project:
         for layer in self.file:
             layer.is_visible = True
 
-        libgerbv = self._libgerbv
         # exportimage.c
         # gerbv_export_autoscale_project
         bb = GerbvRenderSize(0, 0, 0, 0)
-        libgerbv.gerbv_render_get_boundingbox(self._project, byref(bb))
+        _libgerbv.gerbv_render_get_boundingbox(self._project, byref(bb))
 
         # Plus margins
         margin_in_inch = 0.05
 
-        width  = bb.right  - bb.left + margin_in_inch * 2;
-        height = bb.bottom - bb.top + margin_in_inch * 2;
+        width = bb.right - bb.left + margin_in_inch * 2
+        height = bb.bottom - bb.top + margin_in_inch * 2
 
         # Change visibilities back
         for i, layer in enumerate(self.file):
             layer.is_visible = visibilities[i]
 
-        return GerbvRenderInfo(dpi, dpi, bb.left-margin_in_inch, bb.top-margin_in_inch, 3, int(width*dpi), int(height*dpi))
+        return GerbvRenderInfo(dpi, dpi, bb.left - margin_in_inch, bb.top - margin_in_inch, 3, int(width * dpi), int(height * dpi))
