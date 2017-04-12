@@ -20,6 +20,22 @@ class Image:
     def __init__(self, image):
         self._image = image
 
+    @property
+    def min_x(self):
+        return self._image.contents.info.contents.min_x
+
+    @property
+    def min_y(self):
+        return self._image.contents.info.contents.min_y
+
+    @property
+    def max_x(self):
+        return self._image.contents.info.contents.max_x
+
+    @property
+    def max_y(self):
+        return self._image.contents.info.contents.max_y
+
     def create_line_object(self, start_x, start_y, end_x, end_y, line_width, aperture_type):
         _libgerbv.gerbv_image_create_line_object(self._image, start_x, start_y, end_x, end_y, line_width, aperture_type)
 
@@ -90,22 +106,6 @@ class FileInfo:
     def inverted(self, inverted):
         self._file_info.transform.inverted = inverted
         self._inverted = inverted
-
-    @property
-    def min_x(self):
-        return self._file_info.image.contents.info.contents.min_x
-
-    @property
-    def min_y(self):
-        return self._file_info.image.contents.info.contents.min_y
-
-    @property
-    def max_x(self):
-        return self._file_info.image.contents.info.contents.max_x
-
-    @property
-    def max_y(self):
-        return self._file_info.image.contents.info.contents.max_y
 
 
 class Project:
