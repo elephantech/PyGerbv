@@ -156,6 +156,22 @@ class Project:
         for layer in self.file:
             layer.rotate(theta)
 
+    @property
+    def min_x(self):
+        return min([file.image.min_x for file in self.file])
+
+    @property
+    def min_y(self):
+        return min([file.image.min_y for file in self.file])
+
+    @property
+    def max_x(self):
+        return max([file.image.max_x for file in self.file])
+
+    @property
+    def max_y(self):
+        return max([file.image.max_y for file in self.file])
+
     def _generate_render_info(self, dpi=72):
         # Make all layers visible once to get a consistent bounding box regardless the visibilities of layers
         visibilities = [layer.is_visible for layer in self.file]
