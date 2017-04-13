@@ -183,8 +183,8 @@ class Project:
         bb = GerbvRenderSize(0, 0, 0, 0)
         _libgerbv.gerbv_render_get_boundingbox(self._project, byref(bb))
 
-        # Plus margins
-        margin_in_inch = 0.05
+        # Plus a little extra to prevent from missing items due to round-off errors
+        margin_in_inch = 0.001
 
         width = bb.right - bb.left + margin_in_inch * 2
         height = bb.bottom - bb.top + margin_in_inch * 2
