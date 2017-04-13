@@ -156,6 +156,9 @@ class Project:
         for layer in self.file:
             layer.rotate(theta)
 
+    def set_margin(self, margin):
+        self.margin = margin
+
     @property
     def min_x(self):
         return min([file.image.min_x for file in self.file])
@@ -184,7 +187,10 @@ class Project:
         _libgerbv.gerbv_render_get_boundingbox(self._project, byref(bb))
 
         # Plus a little extra to prevent from missing items due to round-off errors
-        margin_in_inch = 0.001
+        if self.margin:
+            margin_in_inch = self.margin
+        else:
+            margin_in_inch = 0.001
 
         width = bb.right - bb.left + margin_in_inch * 2
         height = bb.bottom - bb.top + margin_in_inch * 2
