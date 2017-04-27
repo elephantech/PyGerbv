@@ -3,13 +3,17 @@
 import argparse
 from ctypes import *
 from ctypes.util import find_library
+import platform
 
 from .enumeration import *
 from .structure import *
 from .utils import show_info
 
 
-_libgerbv = CDLL(find_library('gerbv'))
+if platform.system() == 'Linux':
+    _libgerbv = CDLL('/usr/local/lib/' + find_library('gerbv'))
+else:
+    _libgerbv = CDLL(find_library('gerbv'))
 
 
 class Image:
