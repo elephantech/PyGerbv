@@ -179,6 +179,14 @@ class Project:
     def max_y(self):
         return max([file.image.max_y for file in self.file])
 
+    @property
+    def width(self):
+        return self.max_x - self.min_x
+
+    @property
+    def height(self):
+        return self.max_y - self.min_y
+
     def _generate_render_info(self, dpi=72):
         # Make all layers visible once to get a consistent bounding box regardless the visibilities of layers
         visibilities = [layer.is_visible for layer in self.file]
