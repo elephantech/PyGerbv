@@ -136,22 +136,27 @@ class Project:
         self._background = color
 
     def open_layer_from_filename(self, filename):
-        # self._project.last_loaded shows the number of loaded files
-        files_loaded = self._project.last_loaded
+        files_loaded = self.files_loaded()
         _libgerbv.gerbv_open_layer_from_filename(self._project, filename.encode('utf-8'))
-        if self._project.last_loaded == files_loaded:
+        if self.files_loaded() == files_loaded:
             raise GerberFormatError
         file_info = FileInfo(self._project.file[self._project.last_loaded].contents)
         self.file.append(file_info)
         return file_info
 
     def export_pdf_file_autosized(self, filename):
-        render_info = self._generate_render_info()
-        _libgerbv.gerbv_export_pdf_file_from_project(self._project, render_info, filename.encode('utf-8'))
+        if self.files_loaded() == 0:
+            raise GerberNotFoundError
+        else:
+            render_info = self._generate_render_info()
+            _libgerbv.gerbv_export_pdf_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def export_png_file_autosized(self, filename):
-        render_info = self._generate_render_info()
-        _libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
+        if self.files_loaded() == 0:
+            raise GerberNotFoundError
+        else:
+            render_info = self._generate_render_info()
+            _libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def translate(self, x, y):
         for layer in self.file:
@@ -191,6 +196,10 @@ class Project:
     @property
     def height(self):
         return self.max_y - self.min_y
+
+    def files_loaded(self):
+        """Returns the number of loaded files"""
+        return self._project.last_loaded + 1
 
     def _generate_render_info(self, dpi=72):
         # Make all layers visible once to get a consistent bounding box regardless the visibilities of layers
