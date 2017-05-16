@@ -204,9 +204,9 @@ class Project:
         _libgerbv.gerbv_render_get_boundingbox(self._project, byref(bb))
 
         # Plus a little extra to prevent from missing items due to round-off errors
-        if self.margin:
+        try:
             margin_in_inch = self.margin
-        else:
+        except AttributeError:
             margin_in_inch = 0.001
 
         width = bb.right - bb.left + margin_in_inch * 2
