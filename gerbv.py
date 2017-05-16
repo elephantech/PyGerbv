@@ -5,6 +5,7 @@ from ctypes import *
 from ctypes.util import find_library
 import platform
 
+from .exceptions import *
 from .enumeration import *
 from .structure import *
 from .utils import show_info
@@ -135,7 +136,11 @@ class Project:
         self._background = color
 
     def open_layer_from_filename(self, filename):
+        # self._project.last_loaded shows the number of loaded files
+        files_loaded = self._project.last_loaded
         _libgerbv.gerbv_open_layer_from_filename(self._project, filename.encode('utf-8'))
+        if self._project.last_loaded == files_loaded:
+            raise GerberFormatError
         file_info = FileInfo(self._project.file[self._project.last_loaded].contents)
         self.file.append(file_info)
         return file_info
