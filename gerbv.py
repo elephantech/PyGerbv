@@ -118,6 +118,7 @@ class Project:
     _libgerbv.gerbv_open_layer_from_filename.argtypes = [POINTER(GerbvProject), c_char_p]
     _libgerbv.gerbv_export_pdf_file_from_project.argtypes = [POINTER(GerbvProject), POINTER(GerbvRenderInfo), c_char_p]
     _libgerbv.gerbv_export_png_file_from_project.argtypes = [POINTER(GerbvProject), POINTER(GerbvRenderInfo), c_char_p]
+    _libgerbv.gerbv_export_svg_file_from_project.argtypes = [POINTER(GerbvProject), POINTER(GerbvRenderInfo), c_char_p]
     _libgerbv.gerbv_render_get_boundingbox.argtypes = [POINTER(GerbvProject), POINTER(GerbvRenderSize)]
 
     def __init__(self):
@@ -157,6 +158,13 @@ class Project:
         else:
             render_info = self._generate_render_info()
             _libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
+
+    def export_svg_file_autosized(self, filename):
+        if self.files_loaded() == 0:
+            raise GerberNotFoundError
+        else:
+            render_info = self._generate_render_info()
+            _libgerbv.gerbv_export_svg_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def translate(self, x, y):
         for layer in self.file:
