@@ -11,10 +11,13 @@ from .structure import *
 from .utils import show_info
 
 
+library_path = find_library('gerbv')
+if not library_path:
+    raise ModuleNotFoundError
 if platform.system() == 'Linux':
-    _libgerbv = CDLL('/usr/local/lib/' + find_library('gerbv'))
+    _libgerbv = CDLL('/usr/local/lib/' + library_path)
 else:
-    _libgerbv = CDLL(find_library('gerbv'))
+    _libgerbv = CDLL(library_path)
 
 
 class Image:
