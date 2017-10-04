@@ -166,7 +166,7 @@ class Project:
         if self.files_loaded() == 0:
             raise GerberNotFoundError
         else:
-            render_info = self._generate_render_info()
+            render_info = self._generate_render_info(dpi=72/1.25)
             _libgerbv.gerbv_export_svg_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def translate(self, x, y):
