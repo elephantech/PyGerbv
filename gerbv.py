@@ -166,7 +166,7 @@ class Project:
         if self.files_loaded() == 0:
             raise GerberNotFoundError
         else:
-            render_info = self._generate_render_info(dpi=72/1.25)
+            render_info = self._generate_render_info(dpi=72*3/4) # SVG will use pt instead of px
             _libgerbv.gerbv_export_svg_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def translate(self, x, y):
