@@ -20,6 +20,41 @@ else:
     _libgerbv = CDLL(library_path)
 
 
+class Aperture:
+    @classmethod
+    def create_circle_aperture(cls, diameter_in_mm):
+        params = c_double * APERTURE_PARAMETERS_MAX
+        diameter_in_inch = diameter_in_mm / 25.4
+        return cls(GerbvAperture(ApertureType.CIRCLE, None, None, params(diameter_in_inch), 0, 0))
+
+    def __init__(self, aperture):
+        self._aperture = aperture
+
+    @property
+    def type(self):
+        return self._aperture.type
+
+    @property
+    def amacro(self):
+        return self._aperture.amacro
+
+    @property
+    def simplified(self):
+        return self._aperture.simplified
+
+    @property
+    def parameter(self):
+        return self._aperture.parameter
+
+    @property
+    def nuf_parameters(self):
+        return self._aperture.nuf_parameters
+
+    @property
+    def unit(self):
+        return self._aperture.unit
+
+
 class Image:
     _libgerbv.gerbv_image_create_line_object.argtypes = [POINTER(GerbvImage), c_double, c_double, c_double, c_double, c_double, c_gerbv_aperture_type_t]
     _libgerbv.gerbv_export_rs274x_file_from_image.restype = c_bool
@@ -27,6 +62,22 @@ class Image:
 
     def __init__(self, image):
         self._image = image
+        aperture_ids = set()
+        net = image.contents.netlist.contents
+        while(net.next):
+            net = net.next.contents
+            aperture_ids.add(net.aperture)
+        self._apertures = [(aperture_id, Aperture(image.contents.aperture[aperture_id].contents)) for aperture_id in aperture_ids]
+
+    @property
+    def apertures(self):
+        return self._apertures
+
+    @apertures.setter
+    def apertures(self, apertures):
+        self._apertures = apertures
+        for aperture_id, aperture in apertures:
+            self._image.contents.aperture[aperture_id].contents = GerbvAperture(aperture.type, aperture.amacro, aperture.simplified, aperture.parameter, aperture.nuf_parameters, aperture.unit)
 
     @property
     def min_x(self):

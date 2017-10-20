@@ -37,3 +37,9 @@ class ApertureType(enum.IntEnum):
     MACRO_LINE20 = 11
     MACRO_LINE21 = 12
     MACRO_LINE22 = 13
+
+
+class Unit(enum.IntEnum):
+    INCH = 0,
+    MM = 1,
+    UNSPECIFIED = 2
