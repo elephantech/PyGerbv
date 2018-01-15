@@ -180,6 +180,8 @@ class Project:
         self._background = None
         self.background = (0, 1, 1, 1)
         self.file = []
+        self.margin = 0.001
+        self._bounding_box = GerbvRenderSize(0, 0, 0, 0)
 
     @property
     def background(self):
@@ -189,6 +191,13 @@ class Project:
     def background(self, color):
         self._project.background = GdkColor(*[int(x * 65535) for x in color])
         self._background = color
+
+    @property
+    def bounding_box(self):
+        bb = self._bounding_box
+        if bb.left == bb.right == bb.top == bb.bottom == 0:
+            _libgerbv.gerbv_render_get_boundingbox(self._project, byref(self._bounding_box))
+        return self._bounding_box
 
     def open_layer_from_filename(self, filename):
         files_loaded = self.files_loaded()
@@ -234,30 +243,32 @@ class Project:
 
     def set_margin(self, margin):
         self.margin = margin
+        if self.margin < 0.001:
+            self.margin = 0.001
 
     @property
     def min_x(self):
-        return min([file.image.min_x for file in self.file])
+        return self.bounding_box.left
 
     @property
     def min_y(self):
-        return min([file.image.min_y for file in self.file])
+        return self.bounding_box.top
 
     @property
     def max_x(self):
-        return max([file.image.max_x for file in self.file])
+        return self.bounding_box.right
 
     @property
     def max_y(self):
-        return max([file.image.max_y for file in self.file])
+        return self.bounding_box.bottom
 
     @property
     def width(self):
-        return self.max_x - self.min_x
+        return self.bounding_box.right - self.bounding_box.left
 
     @property
     def height(self):
-        return self.max_y - self.min_y
+        return self.bounding_box.bottom - self.bounding_box.top
 
     def files_loaded(self):
         """Returns the number of loaded files"""
@@ -269,22 +280,12 @@ class Project:
         for layer in self.file:
             layer.is_visible = True
 
-        # exportimage.c
-        # gerbv_export_autoscale_project
-        bb = GerbvRenderSize(0, 0, 0, 0)
-        _libgerbv.gerbv_render_get_boundingbox(self._project, byref(bb))
-
         # Plus a little extra to prevent from missing items due to round-off errors
-        try:
-            margin_in_inch = self.margin
-        except AttributeError:
-            margin_in_inch = 0.001
-
-        width = bb.right - bb.left + margin_in_inch * 2
-        height = bb.bottom - bb.top + margin_in_inch * 2
+        width = self.width + self.margin * 2
+        height = self.height + self.margin * 2
 
         # Change visibilities back
         for i, layer in enumerate(self.file):
             layer.is_visible = visibilities[i]
 
-        return GerbvRenderInfo(dpi, dpi, bb.left - margin_in_inch, bb.top - margin_in_inch, 3, int(width * dpi), int(height * dpi))
+        return GerbvRenderInfo(dpi, dpi, self.min_x - self.margin, self.min_y - self.margin, 3, int(width * dpi), int(height * dpi))
