@@ -240,6 +240,7 @@ class Project:
     def rotate(self, theta):
         for layer in self.file:
             layer.rotate(theta)
+            layer.translate(0, self.width)
 
     def set_margin(self, margin):
         self.margin = margin
@@ -283,6 +284,7 @@ class Project:
         # Plus a little extra to prevent from missing items due to round-off errors
         width = self.width + self.margin * 2
         height = self.height + self.margin * 2
+        height, width = sorted([width, height])
 
         # Change visibilities back
         for i, layer in enumerate(self.file):
