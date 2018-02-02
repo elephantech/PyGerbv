@@ -195,8 +195,16 @@ class Project:
     @property
     def bounding_box(self):
         bb = self._bounding_box
-        if bb.left == bb.right == bb.top == bb.bottom == 0:
-            _libgerbv.gerbv_render_get_boundingbox(self._project, byref(self._bounding_box))
+        layer_visibilities = []
+        # Make all layers visible once to get a consistent bounding box regardless the visibilities of layers
+        for layer in self.file:
+            layer_visibilities.append(layer.is_visible)
+            layer.is_visible = True
+
+        _libgerbv.gerbv_render_get_boundingbox(self._project, byref(self._bounding_box))
+        # Set visibilities again
+        for i, layer in enumerate(self.file):
+            layer.is_visible = layer_visibilities[i]
         return self._bounding_box
 
     def open_layer_from_filename(self, filename):
@@ -276,18 +284,8 @@ class Project:
         return self._project.last_loaded + 1
 
     def _generate_render_info(self, dpi=72):
-        # Make all layers visible once to get a consistent bounding box regardless the visibilities of layers
-        visibilities = [layer.is_visible for layer in self.file]
-        for layer in self.file:
-            layer.is_visible = True
-
         # Plus a little extra to prevent from missing items due to round-off errors
         width = self.width + self.margin * 2
         height = self.height + self.margin * 2
         height, width = sorted([width, height])
-
-        # Change visibilities back
-        for i, layer in enumerate(self.file):
-            layer.is_visible = visibilities[i]
-
         return GerbvRenderInfo(dpi, dpi, self.min_x - self.margin, self.min_y - self.margin, 3, int(width * dpi), int(height * dpi))
