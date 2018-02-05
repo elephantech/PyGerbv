@@ -246,9 +246,10 @@ class Project:
             layer.scale(x, y)
 
     def rotate(self, theta):
+        width = self.width
         for layer in self.file:
             layer.rotate(theta)
-            layer.translate(0, self.width)
+            layer.translate(0, width)
 
     def set_margin(self, margin):
         self.margin = margin
