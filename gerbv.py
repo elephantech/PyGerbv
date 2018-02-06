@@ -67,7 +67,7 @@ class Image:
         while(net.next):
             net = net.next.contents
             aperture_ids.add(net.aperture)
-        self._apertures = [(aperture_id, Aperture(image.contents.aperture[aperture_id].contents)) for aperture_id in aperture_ids]
+        self._apertures = [(aperture_id, Aperture(image.contents.aperture[aperture_id].contents)) for aperture_id in aperture_ids if aperture_id >= 10]
 
     @property
     def apertures(self):
