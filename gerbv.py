@@ -3,6 +3,7 @@
 import argparse
 from ctypes import *
 from ctypes.util import find_library
+import math
 import platform
 
 from .exceptions import *
@@ -57,8 +58,14 @@ class Aperture:
 
 class Image:
     _libgerbv.gerbv_image_create_line_object.argtypes = [POINTER(GerbvImage), c_double, c_double, c_double, c_double, c_double, c_gerbv_aperture_type_t]
+    _libgerbv.gerbv_create_image.argtypes = [POINTER(GerbvImage), c_char_p]
+    _libgerbv.gerbv_create_image.restype = POINTER(GerbvImage)
     _libgerbv.gerbv_export_rs274x_file_from_image.restype = c_bool
     _libgerbv.gerbv_export_rs274x_file_from_image.argtypes = [c_char_p, POINTER(GerbvImage), POINTER(GerbvUserTransformation)]
+    _libgerbv.gerbv_image_duplicate_image.argtypes = [POINTER(GerbvImage), POINTER(GerbvUserTransformation)]
+    _libgerbv.gerbv_image_duplicate_image.restype = POINTER(GerbvImage)
+    _libgerbv.gerbv_image_copy_image.argtypes = [POINTER(GerbvImage), POINTER(GerbvUserTransformation), POINTER(GerbvImage)]
+
 
     def __init__(self, image):
         self._image = image
@@ -97,6 +104,27 @@ class Image:
 
     def create_line_object(self, start_x, start_y, end_x, end_y, line_width, aperture_type):
         _libgerbv.gerbv_image_create_line_object(self._image, start_x, start_y, end_x, end_y, line_width, aperture_type)
+
+    def panelize(self, positions, rotate=False):
+        if rotate:
+            rotation = math.pi / 2
+        else:
+            rotation = 0
+
+        new_image = _libgerbv.gerbv_create_image(None, b'rs274-x')
+        for x, y in positions:
+            t = GerbvUserTransformation(
+                x,
+                y,
+                1,
+                1,
+                rotation,
+                False,
+                False,
+                False
+            )
+            _libgerbv.gerbv_image_copy_image(self._image, t, new_image)
+        self._image = new_image
 
     def export_rs274x_file(self, filename, transformation):
         return _libgerbv.gerbv_export_rs274x_file_from_image(filename.encode('utf-8'), self._image, transformation)
@@ -288,5 +316,4 @@ class Project:
         # Plus a little extra to prevent from missing items due to round-off errors
         width = self.width + self.margin * 2
         height = self.height + self.margin * 2
-        height, width = sorted([width, height])
         return GerbvRenderInfo(dpi, dpi, self.min_x - self.margin, self.min_y - self.margin, 3, int(width * dpi), int(height * dpi))
