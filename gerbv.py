@@ -1,15 +1,12 @@
 # encoding: utf-8
 
-import argparse
 from ctypes import *
 from ctypes.util import find_library
-import math
 import platform
 
 from .exceptions import *
 from .enumeration import *
 from .structure import *
-from .utils import show_info
 
 
 library_path = find_library('gerbv')
@@ -105,17 +102,12 @@ class Image:
     def create_line_object(self, start_x, start_y, end_x, end_y, line_width, aperture_type):
         _libgerbv.gerbv_image_create_line_object(self._image, start_x, start_y, end_x, end_y, line_width, aperture_type)
 
-    def panelize(self, positions, rotate=False):
-        if rotate:
-            rotation = math.pi / 2
-        else:
-            rotation = 0
-
+    def panelize(self, positions, rotation=0, translate=(0, 0)):
         new_image = _libgerbv.gerbv_create_image(None, b'rs274-x')
         for x, y in positions:
             t = GerbvUserTransformation(
-                x,
-                y,
+                x + translate[0],
+                y + translate[1],
                 1,
                 1,
                 rotation,
@@ -244,25 +236,25 @@ class Project:
         self.file.append(file_info)
         return file_info
 
-    def export_pdf_file_autosized(self, filename):
+    def export_pdf_file(self, filename, size):
         if self.files_loaded() == 0:
             raise GerberNotFoundError
         else:
-            render_info = self._generate_render_info()
+            render_info = self._generate_render_info(size)
             _libgerbv.gerbv_export_pdf_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
-    def export_png_file_autosized(self, filename):
+    def export_png_file(self, filename, size):
         if self.files_loaded() == 0:
             raise GerberNotFoundError
         else:
-            render_info = self._generate_render_info()
+            render_info = self._generate_render_info(size)
             _libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
-    def export_svg_file_autosized(self, filename):
+    def export_svg_file(self, filename, size):
         if self.files_loaded() == 0:
             raise GerberNotFoundError
         else:
-            render_info = self._generate_render_info(dpi=72*3/4) # SVG will use pt instead of px
+            render_info = self._generate_render_info(size, dpi=72*3/4) # SVG uses pt instead of px
             _libgerbv.gerbv_export_svg_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def translate(self, x, y):
@@ -312,8 +304,5 @@ class Project:
         """Returns the number of loaded files"""
         return self._project.last_loaded + 1
 
-    def _generate_render_info(self, dpi=72):
-        # Plus a little extra to prevent from missing items due to round-off errors
-        width = self.width + self.margin * 2
-        height = self.height + self.margin * 2
-        return GerbvRenderInfo(dpi, dpi, self.min_x - self.margin, self.min_y - self.margin, 3, int(width * dpi), int(height * dpi))
+    def _generate_render_info(self, size, dpi=72):
+        return GerbvRenderInfo(dpi, dpi, 0, 0, 3, int(size[0] * dpi), int(size[1] * dpi))
