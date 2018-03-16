@@ -3,6 +3,7 @@
 from ctypes import *
 from ctypes.util import find_library
 import platform
+import tempfile
 
 from .exceptions import *
 from .enumeration import *
@@ -104,18 +105,25 @@ class Image:
 
     def panelize(self, positions, rotation=0, translate=(0, 0)):
         new_image = _libgerbv.gerbv_create_image(None, b'rs274-x')
-        for x, y in positions:
-            t = GerbvUserTransformation(
-                x + translate[0],
-                y + translate[1],
-                1,
-                1,
-                rotation,
-                False,
-                False,
-                False
-            )
-            _libgerbv.gerbv_image_copy_image(self._image, t, new_image)
+        p = Project()
+        # FIXME: 単純にimageをcopyするとgerbv側でメモリ関連のエラーが出る
+        # そのため現在のimageをファイルに書き出してからそれをもう一度読み直す手順にしている
+        # できれば効率よくしたいけども...
+        with tempfile.NamedTemporaryFile() as f:
+            self.export_rs274x_file(f.name, None)
+            for x, y in positions:
+                t = GerbvUserTransformation(
+                    x + translate[0],
+                    y + translate[1],
+                    1,
+                    1,
+                    rotation,
+                    False,
+                    False,
+                    False
+                )
+                file_info = p.open_layer_from_filename(f.name)
+                _libgerbv.gerbv_image_copy_image(file_info.image._image, t, new_image)
         self._image = new_image
 
     def export_rs274x_file(self, filename, transformation):
@@ -250,11 +258,11 @@ class Project:
             render_info = self._generate_render_info(size)
             _libgerbv.gerbv_export_png_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
-    def export_svg_file(self, filename, size):
+    def export_auto_sized_svg_file(self, filename):
         if self.files_loaded() == 0:
             raise GerberNotFoundError
         else:
-            render_info = self._generate_render_info(size, dpi=72*3/4) # SVG uses pt instead of px
+            render_info = self._generate_auto_sized_render_info(dpi=72*3/4) # SVG uses pt instead of px
             _libgerbv.gerbv_export_svg_file_from_project(self._project, render_info, filename.encode('utf-8'))
 
     def translate(self, x, y):
@@ -306,3 +314,7 @@ class Project:
 
     def _generate_render_info(self, size, dpi=72):
         return GerbvRenderInfo(dpi, dpi, 0, 0, 3, int(size[0] * dpi), int(size[1] * dpi))
+
+    def _generate_auto_sized_render_info(self, dpi=72):
+        margin = 0.1
+        return GerbvRenderInfo(dpi, dpi, self.min_x - margin, self.min_y - margin, 3, int((self.width + margin * 2) * dpi), int((self.height + margin * 2) * dpi))
