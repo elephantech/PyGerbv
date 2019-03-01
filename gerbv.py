@@ -111,6 +111,7 @@ class Image:
         # できれば効率よくしたいけども...
         with tempfile.NamedTemporaryFile() as f:
             self.export_rs274x_file(f.name, None)
+            file_info = p.open_layer_from_filename(f.name)
             for x, y in positions:
                 t = GerbvUserTransformation(
                     x + translate[0],
@@ -122,7 +123,6 @@ class Image:
                     False,
                     False
                 )
-                file_info = p.open_layer_from_filename(f.name)
                 _libgerbv.gerbv_image_copy_image(file_info.image._image, t, new_image)
         self._image = new_image
 
